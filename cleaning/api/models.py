@@ -8,8 +8,8 @@ _ALLOWED_ROOT = Path("/scrapped-data")
 def _assert_within_root(p: Path) -> Path:
     try:
         p.resolve().relative_to(_ALLOWED_ROOT.resolve())
-    except ValueError:
-        raise ValueError(f"Path {p} is outside the allowed root {_ALLOWED_ROOT}")
+    except ValueError as err:
+        raise ValueError(f"Path {p} is outside the allowed root {_ALLOWED_ROOT}") from err
     return p
 
 
@@ -29,21 +29,21 @@ class EntityToClean(BaseModel):
 
     @field_validator("file_path", "meta_data_path", "logs_path", mode="before")
     @classmethod
-    def validate_file_within_root(cls, v):
+    def validate_file_within_root(cls, v: str) -> Path:
         return _assert_within_root(Path(v))
 
     @field_validator("directory_path", mode="before")
     @classmethod
-    def validate_dir_within_root(cls, v):
+    def validate_dir_within_root(cls, v: str) -> Path:
         return _assert_within_root(Path(v))
 
 
 class SourceCleaningFile(BaseModel):
-    baseId: str
-    sourceBaseId: str
+    base_id: str
+    source_base_id: str
     url: str
-    originalDataUrl: str | None = None
-    originalMetadataUrl: str | None = None
+    original_data_url: str | None = None
+    original_metadata_url: str | None = None
 
 
 class SourceCleaningTask(BaseModel):
@@ -59,5 +59,5 @@ class SourceCleaningTask(BaseModel):
 
     @field_validator("logs_path", mode="before")
     @classmethod
-    def validate_logs_path_within_root(cls, v):
+    def validate_logs_path_within_root(cls, v: str) -> Path:
         return _assert_within_root(Path(v))

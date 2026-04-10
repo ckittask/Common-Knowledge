@@ -25,7 +25,7 @@ from unittest.mock import MagicMock, patch
 # ---------------------------------------------------------------------------
 
 def _make_entity(tmp_path: Path, file_type: str, content: str, use_llm: bool = False,
-                 use_llm_correction: bool = False):
+                 use_llm_correction: bool = False) -> MagicMock:
     """
     Create a minimal EntityToClean-like namespace pointing at real temp files
     so we can call the worker functions directly without Pydantic validation.
@@ -60,23 +60,23 @@ def _make_entity(tmp_path: Path, file_type: str, content: str, use_llm: bool = F
 # ---------------------------------------------------------------------------
 
 class TestNormalizeNewlines:
-    def test_three_newlines_collapsed(self):
+    def test_three_newlines_collapsed(self) -> None:
         from worker.tasks import normalize_newlines
         assert normalize_newlines("a\n\n\nb") == "a\n\nb"
 
-    def test_five_newlines_collapsed(self):
+    def test_five_newlines_collapsed(self) -> None:
         from worker.tasks import normalize_newlines
         assert normalize_newlines("a\n\n\n\n\nb") == "a\n\nb"
 
-    def test_two_newlines_unchanged(self):
+    def test_two_newlines_unchanged(self) -> None:
         from worker.tasks import normalize_newlines
         assert normalize_newlines("a\n\nb") == "a\n\nb"
 
-    def test_single_newline_unchanged(self):
+    def test_single_newline_unchanged(self) -> None:
         from worker.tasks import normalize_newlines
         assert normalize_newlines("a\nb") == "a\nb"
 
-    def test_empty_string(self):
+    def test_empty_string(self) -> None:
         from worker.tasks import normalize_newlines
         assert normalize_newlines("") == ""
 
@@ -86,7 +86,7 @@ class TestNormalizeNewlines:
 # ---------------------------------------------------------------------------
 
 class TestBeautifulSoupExtract:
-    def test_extracts_main_element_content(self):
+    def test_extracts_main_element_content(self) -> None:
         from worker.tasks import _beautifulsoup_extract
         html = """<html><body>
           <header>Nav stuff</header>
@@ -97,7 +97,7 @@ class TestBeautifulSoupExtract:
         assert "Title" in result
         assert "Body text" in result
 
-    def test_removes_nav_script_style(self):
+    def test_removes_nav_script_style(self) -> None:
         from worker.tasks import _beautifulsoup_extract
         html = """<html><body>
           <nav>Home | About</nav>
@@ -110,7 +110,7 @@ class TestBeautifulSoupExtract:
         assert "alert" not in result
         assert "Home | About" not in result
 
-    def test_fallback_to_body_when_no_main(self):
+    def test_fallback_to_body_when_no_main(self) -> None:
         from worker.tasks import _beautifulsoup_extract
         html = """<html><body>
           <div><h1>No Main Element</h1><p>Still extracted.</p></div>
@@ -119,7 +119,7 @@ class TestBeautifulSoupExtract:
         assert "No Main Element" in result
         assert "Still extracted" in result
 
-    def test_returns_string(self):
+    def test_returns_string(self) -> None:
         from worker.tasks import _beautifulsoup_extract
         result = _beautifulsoup_extract("<html><body><p>hello</p></body></html>")
         assert isinstance(result, str)
@@ -131,7 +131,7 @@ class TestBeautifulSoupExtract:
 # ---------------------------------------------------------------------------
 
 class TestTrafilaturaExtract:
-    def test_extracts_article_content(self):
+    def test_extracts_article_content(self) -> None:
         from worker.tasks import _trafilatura_extract
         html = """<html><body>
           <article>
@@ -144,12 +144,12 @@ class TestTrafilaturaExtract:
         # trafilatura may return None on very short content — just check type
         assert result is None or isinstance(result, str)
 
-    def test_returns_none_on_empty_html(self):
+    def test_returns_none_on_empty_html(self) -> None:
         from worker.tasks import _trafilatura_extract
         result = _trafilatura_extract("<html><body></body></html>")
         assert result is None
 
-    def test_returns_none_on_noise_only(self):
+    def test_returns_none_on_noise_only(self) -> None:
         from worker.tasks import _trafilatura_extract
         html = "<html><body><nav>Home | About</nav><footer>Copyright 2024</footer></body></html>"
         result = _trafilatura_extract(html)
@@ -161,7 +161,7 @@ class TestTrafilaturaExtract:
 # ---------------------------------------------------------------------------
 
 class TestCleanHtmlRouting:
-    def test_no_llm_uses_trafilatura_when_successful(self, tmp_path: Path):
+    def test_no_llm_uses_trafilatura_when_successful(self, tmp_path: Path) -> None:
         from worker.tasks import clean_html
         html = """<html><body><main>
           <h1>Retirement Reform</h1>
@@ -177,7 +177,7 @@ class TestCleanHtmlRouting:
         mock_traf.assert_called_once()
         assert result == "# Extracted\n\nGood content."
 
-    def test_no_llm_falls_back_to_beautifulsoup_when_trafilatura_empty(self, tmp_path: Path):
+    def test_no_llm_falls_back_to_beautifulsoup_when_trafilatura_empty(self, tmp_path: Path) -> None:
         from worker.tasks import clean_html
         entity = _make_entity(tmp_path, ".html", "<html><body><main><p>Hello</p></main></body></html>")
 
@@ -188,7 +188,7 @@ class TestCleanHtmlRouting:
         mock_bs.assert_called_once()
         assert result == "BS result"
 
-    def test_use_llm_passes_when_eval_passes(self, tmp_path: Path):
+    def test_use_llm_passes_when_eval_passes(self, tmp_path: Path) -> None:
         from worker.tasks import clean_html
         entity = _make_entity(tmp_path, ".html", "<html><body><p>text</p></body></html>",
                                use_llm=True, use_llm_correction=False)
@@ -200,7 +200,7 @@ class TestCleanHtmlRouting:
 
         assert result == "Good extraction"
 
-    def test_use_llm_falls_back_to_bs_when_eval_fails_no_correction(self, tmp_path: Path):
+    def test_use_llm_falls_back_to_bs_when_eval_fails_no_correction(self, tmp_path: Path) -> None:
         from worker.tasks import clean_html
         entity = _make_entity(tmp_path, ".html", "<html><body><p>text</p></body></html>",
                                use_llm=True, use_llm_correction=False)
@@ -214,7 +214,7 @@ class TestCleanHtmlRouting:
         mock_bs.assert_called_once()
         assert result == "BS fallback"
 
-    def test_use_llm_correction_uses_llm_extract_when_eval_fails(self, tmp_path: Path):
+    def test_use_llm_correction_uses_llm_extract_when_eval_fails(self, tmp_path: Path) -> None:
         from worker.tasks import clean_html
         entity = _make_entity(tmp_path, ".html", "<html><body><p>text</p></body></html>",
                                use_llm=True, use_llm_correction=True)
@@ -228,7 +228,7 @@ class TestCleanHtmlRouting:
         mock_llm_ext.assert_called_once()
         assert result == "LLM corrected content"
 
-    def test_use_llm_correction_falls_back_to_bs_when_llm_extract_empty(self, tmp_path: Path):
+    def test_use_llm_correction_falls_back_to_bs_when_llm_extract_empty(self, tmp_path: Path) -> None:
         from worker.tasks import clean_html
         entity = _make_entity(tmp_path, ".html", "<html><body><p>text</p></body></html>",
                                use_llm=True, use_llm_correction=True)
@@ -244,8 +244,8 @@ class TestCleanHtmlRouting:
         assert result == "BS last resort"
 
     def test_correction_without_use_llm_logs_warning_and_ignores_correction(
-        self, tmp_path: Path, caplog
-    ):
+        self, tmp_path: Path, caplog: Any
+    ) -> None:
         from worker.tasks import clean_html
         entity = _make_entity(tmp_path, ".html", "<html><body><p>text</p></body></html>",
                                use_llm=False, use_llm_correction=True)
@@ -263,7 +263,7 @@ class TestCleanHtmlRouting:
 # ---------------------------------------------------------------------------
 
 class TestLLMHelpers:
-    def test_llm_evaluate_returns_false_on_api_error(self):
+    def test_llm_evaluate_returns_false_on_api_error(self) -> None:
         from worker.tasks import _llm_evaluate
         from openai import APIError
 
@@ -275,7 +275,7 @@ class TestLLMHelpers:
         assert passed is False
         assert "LLM API error" in reason
 
-    def test_llm_evaluate_returns_false_on_json_decode_error(self):
+    def test_llm_evaluate_returns_false_on_json_decode_error(self) -> None:
         from worker.tasks import _llm_evaluate
 
         client = MagicMock()
@@ -284,9 +284,8 @@ class TestLLMHelpers:
         assert passed is False
         assert "non-JSON" in reason
 
-    def test_llm_evaluate_parses_pass_true(self):
+    def test_llm_evaluate_parses_pass_true(self) -> None:
         from worker.tasks import _llm_evaluate
-        import json as _json
 
         client = MagicMock()
         client.chat.completions.create.return_value.choices[0].message.content = (
@@ -296,7 +295,7 @@ class TestLLMHelpers:
         assert passed is True
         assert reason == "looks great"
 
-    def test_llm_evaluate_parses_pass_false(self):
+    def test_llm_evaluate_parses_pass_false(self) -> None:
         from worker.tasks import _llm_evaluate
 
         client = MagicMock()
@@ -307,7 +306,7 @@ class TestLLMHelpers:
         assert passed is False
         assert reason == "too noisy"
 
-    def test_llm_extract_returns_empty_string_on_api_error(self):
+    def test_llm_extract_returns_empty_string_on_api_error(self) -> None:
         from worker.tasks import _llm_extract
         from openai import APIError
 
@@ -318,7 +317,7 @@ class TestLLMHelpers:
         result = _llm_extract(client, "dep", "<html></html>")
         assert result == ""
 
-    def test_llm_extract_returns_content(self):
+    def test_llm_extract_returns_content(self) -> None:
         from worker.tasks import _llm_extract
 
         client = MagicMock()
@@ -334,7 +333,7 @@ class TestLLMHelpers:
 # ---------------------------------------------------------------------------
 
 class TestSetUpLogging:
-    def test_no_duplicate_file_handlers(self, tmp_path: Path):
+    def test_no_duplicate_file_handlers(self, tmp_path: Path) -> None:
         from worker.tasks import set_up_logging
         import logging as _logging
 
@@ -360,7 +359,7 @@ class TestSetUpLogging:
 # ---------------------------------------------------------------------------
 
 class TestMetadataMutation:
-    def test_language_written_inside_metadata_key(self, tmp_path: Path):
+    def test_language_written_inside_metadata_key(self, tmp_path: Path) -> None:
         """
         After clean_file_task runs, metadata["metadata"]["language"] must be set
         and any stale top-level "language" key (as written by the scrapper) must
@@ -393,7 +392,7 @@ class TestMetadataMutation:
         assert metadata["metadata"]["language"] is not None
         assert "language" not in metadata
 
-    def test_cleaned_txt_written(self, tmp_path: Path):
+    def test_cleaned_txt_written(self, tmp_path: Path) -> None:
         from worker.tasks import clean_file_task
 
         html = "<html><body><main><h1>Hello</h1><p>World content.</p></main></body></html>"

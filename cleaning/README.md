@@ -74,11 +74,11 @@ Asynchronous. Accepts a batch of files and returns immediately. Processing runs 
   "extract_images": false,
   "files": [
     {
-      "baseId": "uuid",
-      "sourceBaseId": "uuid",
+      "base_id": "uuid",
+      "source_base_id": "uuid",
       "url": "https://source-url.com",
-      "originalDataUrl": "/scrapped-data/.../file.html",
-      "originalMetadataUrl": "/scrapped-data/.../file.meta.json"
+      "original_data_url": "/scrapped-data/.../file.html",
+      "original_metadata_url": "/scrapped-data/.../file.meta.json"
     }
   ]
 }

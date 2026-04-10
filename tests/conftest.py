@@ -45,7 +45,7 @@ from loguru import logger
 # Early environment setup — runs before any module is imported/collected
 # ---------------------------------------------------------------------------
 
-def pytest_configure(config):
+def pytest_configure(config: pytest.Config) -> None:
     """
     Set required env vars before pytest collects any modules.
     'api/config.py' instantiates Settings() at module level, which requires
